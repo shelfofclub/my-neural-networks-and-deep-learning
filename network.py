@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import random
 
 class Network(object):
@@ -38,6 +38,7 @@ class Network(object):
         self.biases = [b - (eta / len(mini_batch) * nb) for b, nb in zip(self.biases, nabla_b)]
         self.weights = [w - (eta / len(mini_batch) * nw) for w, nw in zip(self.weights, nabla_w)]
 
+    #TODO:修改输入为矩阵
     def backprop(self, x, y):
         #准备
         nabla_b = [np.zeros(b.shape) for b in self.biases]
