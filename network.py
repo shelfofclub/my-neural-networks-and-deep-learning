@@ -15,18 +15,38 @@ class Network(object):
 
     def SGD(self, train_data, epochs, mini_batch_size, eta, test_data=None):
         '''train_date的形式是元组(x,y)，eta是学习率'''
+        train_data = list(train_data)
         n = len(train_data)
         if test_data:
+            test_data=list(test_data)
             n_test=len(test_data)
-        for j in xrange(epochs):
+        for j in range(epochs):
             random.shuffle(train_data)
-            mini_batchs = [train_data[k:k + mini_batch_size] for k in xrange(0, n, mini_batch_size)]
+            mini_batchs = [train_data[k:k + mini_batch_size] for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batchs:
                 self.update_mini_batch(mini_batch, eta)
-                if test_data:
-                    print("Epoch {}: {} / {}".format(j, self.evaluate(train_data), n_test))
-                else:
-                    print("Epoch {} complete".format(j))
+            if test_data:
+                print("Epoch {}: {} / {}".format(j, self.evaluate(test_data), n_test))
+            else:
+                print("Epoch {} complete".format(j))
+
+    def SGD_matrix(self, train_data, epochs, mini_batch_size, eta, test_data=None):
+        '''train_date的形式是元组(x,y)，eta是学习率'''
+        train_data=list(train_data)
+        n = len(train_data)
+        if test_data:
+            test_data = list(test_data)
+            n_test=len(test_data)
+        for j in range(epochs):
+            random.shuffle(train_data)
+            mini_batchs = [train_data[k:k + mini_batch_size] for k in range(0, n, mini_batch_size)]
+            for mini_batch in mini_batchs:
+                self.update_mini_batch_matrix(mini_batch, eta)
+            if test_data:
+                print("Epoch {}: {} / {}".format(j, self.evaluate(test_data), n_test))
+            else:
+                print("Epoch {} complete".format(j))
+
 
     def update_mini_batch(self, mini_batch, eta):
         nabla_b=[np.zeros(b.shape) for b in self.biases]
@@ -38,7 +58,17 @@ class Network(object):
         self.biases = [b - (eta / len(mini_batch) * nb) for b, nb in zip(self.biases, nabla_b)]
         self.weights = [w - (eta / len(mini_batch) * nw) for w, nw in zip(self.weights, nabla_w)]
 
-    #TODO:修改输入为矩阵
+    def update_mini_batch_matrix(self, mini_batch, eta):
+        nabla_b=[np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
+        xbatch = np.array([_x.ravel() for _x, _y in mini_batch]).transpose()
+        ybatch = np.asarray([_y.ravel() for _x, _y in mini_batch]).transpose()
+
+        nabla_b,nabla_w = self.backprop_matrix(xbatch, ybatch)
+        
+        self.biases = [b - (eta / len(mini_batch) * nb) for b, nb in zip(self.biases, nabla_b)]
+        self.weights = [w - (eta / len(mini_batch) * nw) for w, nw in zip(self.weights, nabla_w)]
+
     def backprop(self, x, y):
         #准备
         nabla_b = [np.zeros(b.shape) for b in self.biases]
@@ -56,7 +86,7 @@ class Network(object):
         delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1])
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
-        for l in xrange(2, self.num_layers):
+        for l in range(2, self.num_layers):
             z = zs[-l]
             sp = sigmoid_prime(z)
             delta = np.dot(self.weights[-l + 1].transpose(), delta) * sp
@@ -65,6 +95,31 @@ class Network(object):
         
         return (nabla_b,nabla_w)
         
+    def backprop_matrix(self, x, y):
+        #准备
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
+        #前向
+        activation = x
+        activations = [x]
+        zs = []
+        for b, w in zip(self.biases, self.weights):
+            z = np.dot(w, activation) + b
+            zs.append(z)
+            activation = sigmoid(z)
+            activations.append(activation)
+        #反向
+        delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1])
+        nabla_b[-1] = delta.sum(1).reshape([len(delta), 1])
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())
+        for l in range(2, self.num_layers):
+            z = zs[-l]
+            sp = sigmoid_prime(z)
+            delta = np.dot(self.weights[-l + 1].transpose(), delta) * sp
+            nabla_b[-l] = delta.sum(1).reshape([len(delta), 1])
+            nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
+        
+        return (nabla_b,nabla_w)
 
     def cost_derivative(self,output_activations,y):
         return (output_activations - y)
@@ -77,4 +132,4 @@ def sigmoid(z):
     return 1.0 / (1.0+ np.exp(-z))
     
 def sigmoid_prime(z):
-    return sigmoid(z)*(1-sigmoid(z))
+    return sigmoid(z) * (1 - sigmoid(z))
