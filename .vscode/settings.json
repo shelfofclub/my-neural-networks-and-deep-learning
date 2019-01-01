@@ -1,6 +1,0 @@
-{
-    "git.enabled": true,
-    "python.pythonPath": "C:\\anaconda\\Anaconda3\\python.exe",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true
-}
