@@ -1,3 +1,6 @@
 /network_right.py
+/network2_right.py
 /__pycache__/*
 /.vscode/**
+/outputs/**
+/.ipynb_checkpoints/**
